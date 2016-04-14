@@ -146,7 +146,7 @@ history-filename
 logging_conf_file
   Location of the logging configuration file.
 
-max-reschedules
+worker-max-reschedules
   The maximum number of times that a job can be automatically
   rescheduled by a worker before it will stop trying. Workers will
   reschedule a job if it is found to not be done when attempting to run
