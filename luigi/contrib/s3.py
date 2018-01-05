@@ -184,8 +184,12 @@ class S3Client(FileSystem):
         s3_bucket = self.s3.Bucket(bucket)
         # root
         if self._is_root(key):
+<<<<<<< HEAD
             raise InvalidDeleteException(
                 'Cannot delete root of bucket at path %s' % path)
+=======
+            raise InvalidDeleteException('Cannot delete root of bucket at path %s' % path)
+>>>>>>> s3client
 
         # file
         if self._exists(bucket, key):
@@ -197,6 +201,7 @@ class S3Client(FileSystem):
             raise InvalidDeleteException(
                 'Path %s is a directory. Must use recursive delete' % path)
 
+<<<<<<< HEAD
         delete_key_list = []
         for obj in s3_bucket.objects.filter(Prefix=self._add_path_delimiter(key)):
             delete_key_list.append({'Key': obj.key})
@@ -208,6 +213,16 @@ class S3Client(FileSystem):
         if len(delete_key_list) > 0:
             self.s3.meta.client.delete_objects(
                 Bucket=bucket, Delete={'Objects': delete_key_list})
+=======
+        delete_key_list = [{'Key': obj.key} for obj in s3_bucket.objects.filter(Prefix=self._add_path_delimiter(key))]
+
+        # delete the directory marker file if it exists
+        if self._exists(bucket, '{}{}'.format(key, S3_DIRECTORY_MARKER_SUFFIX_0)):
+            delete_key_list.append({'Key': '{}{}'.format(key, S3_DIRECTORY_MARKER_SUFFIX_0)})
+
+        if len(delete_key_list) > 0:
+            self.s3.meta.client.delete_objects(Bucket=bucket, Delete={'Objects': delete_key_list})
+>>>>>>> s3client
             return True
 
         return False
@@ -472,8 +487,13 @@ class S3Client(FileSystem):
                 pass
         if key:
             return config.get(key)
+<<<<<<< HEAD
         section_only = {k: v for k, v in config.items(
         ) if k not in defaults or v != defaults[k]}
+=======
+        section_only = {k: v for k, v in config.items() if k not in defaults or v != defaults[k]}
+        
+>>>>>>> s3client
         return section_only
 
     def _path_to_bucket_and_key(self, path):
