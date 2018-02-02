@@ -17,25 +17,25 @@
 """
 Implementation of Simple Storage Service support.
 :py:class:`S3Target` is a subclass of the Target class to support S3 file
-system operations. The `boto` library is required to use S3 targets.
+system operations. The `boto3` library is required to use S3 targets.
 """
 
 from __future__ import division
 
 import datetime
-import io
 import itertools
 import logging
 import os
 import os.path
-import warnings
 
-import botocore
+import time
+from multiprocessing.pool import ThreadPool
 
 try:
     from urlparse import urlsplit
 except ImportError:
     from urllib.parse import urlsplit
+import warnings
 
 try:
     from ConfigParser import NoSectionError
@@ -43,13 +43,13 @@ except ImportError:
     from configparser import NoSectionError
 
 from luigi import six
+from luigi.six.moves import range
 
 from luigi import configuration
 from luigi.format import get_default_format
-from luigi.parameter import Parameter
+from luigi.parameter import OptionalParameter, Parameter
 from luigi.target import FileAlreadyExists, FileSystem, FileSystemException, FileSystemTarget, AtomicLocalFile, MissingParentDirectory
 from luigi.task import ExternalTask
-
 
 logger = logging.getLogger('luigi-interface')
 
@@ -140,7 +140,9 @@ class S3Client(FileSystem):
 
         # At this stage, if no credentials provided, boto3 would handle their resolution for us
         # For finding out about the order in which it tries to find these credentials
-        # please see here details http://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials
+        # please see here details
+        # http://boto3.readthedocs.io/en/latest/guide/configuration.html#configuring-credentials
+        logger.debug('calling boto3 resource with access_key={}'.format(aws_access_key_id))
         self._s3 = boto3.resource('s3',
                                   aws_access_key_id=aws_access_key_id,
                                   aws_secret_access_key=aws_secret_access_key,
@@ -268,7 +270,8 @@ class S3Client(FileSystem):
                 'encrypt_key deprecated in boto3. Please refer to boto3 documentation for encryption details.')
 
         import boto3
-        # default part size for boto3 is 8Mb, changing it to fit part_size provided as a parameter
+        # default part size for boto3 is 8Mb, changing it to fit part_size
+        # provided as a parameter
         transfer_config = boto3.s3.transfer.TransferConfig(
             multipart_chunksize=part_size)
 
@@ -716,7 +719,7 @@ class S3FlagTask(ExternalTask):
     An external task that requires the existence of EMR output in S3.
     """
     path = Parameter()
-    flag = Parameter(default=None)
+    flag = OptionalParameter(default=None)
 
     def output(self):
         return S3FlagTarget(self.path, flag=self.flag)
